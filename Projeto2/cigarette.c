@@ -10,6 +10,16 @@
 #define PERSON_QTD		3+1	// 3 smokers + Admnistrator
 #define RESOURCES_QTD 	3+1	// 3 Ingredients + IsSmoking
 
+#define M_MATCH_INDEX		0
+#define M_TOBACCO_INDEX		1
+#define M_PAPER_INDEX		2
+#define M_IS_SMOKING_INDEX	3
+
+#define M_ADM_INDEX				0
+#define M_SMOKER_MATCH_INDEX	1
+#define M_SMOKER_TOBACCO_INDEX	2
+#define M_SMOKER_PAPER_INDEX	3
+
 int global_State_Matrix[PERSON_QTD][RESOURCES_QTD] = {0};
 
 //Semaphores for ingredient production administration
@@ -65,6 +75,15 @@ void* producting_Tobacco_Match(void *arg){
 	while(1){
 		sem_wait(&production_Administrator);
 		//dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 1;
+		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 1;
+		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 0;
+
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_IS_SMOKING_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_IS_SMOKING_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 0;
+
+		print_actual_state();
 		printf("----PRODUCTION OF TOBACCO AND MATCH IS GOING ON----\n");
 		sleep(2);
 		sem_post(&production_Tobacco);
@@ -78,6 +97,15 @@ void* producting_Tobacco_Paper(void *arg){
 	while(1){
 		sem_wait(&production_Administrator);
 		//dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 1;
+		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 0;
+		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 1;
+
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_IS_SMOKING_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_IS_SMOKING_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 0;
+
+		print_actual_state();
 		printf("----PRODUCTION OF TOBACCO AND PAPER IS GOING ON----\n");
 		sleep(2);
 		sem_post(&production_Tobacco);
@@ -91,6 +119,16 @@ void* producting_Paper_Match(void *arg){
 	while(1){
 		sem_wait(&production_Administrator);
 		//dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+
+		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 0;
+		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 1;
+		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 1;
+
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_IS_SMOKING_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_IS_SMOKING_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 0;
+
+		print_actual_state();
 		printf("----PRODUCTION OF PAPER AND MATCH IS GOING ON----\n");
 		sleep(2);
 		sem_post(&production_Paper);
@@ -105,12 +143,23 @@ void* smoking_With_Tobacco(void *arg){
 	while(1){
 		sem_wait(&transporter_Tobacco);
 		//dispatch_semaphore_wait(transporter_Tobacco, DISPATCH_TIME_FOREVER);
+		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 0;
+		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_MATCH_INDEX] = 1;
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_PAPER_INDEX] = 1;
+		print_actual_state();
 		printf("----SMOKER WITH TOBACCO IS MAKING THE CIGARETTE----\n");
 		sleep(2);
-		sem_post(&production_Administrator);
-		//dispatch_semaphore_signal(production_Administrator);
+
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_MATCH_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_PAPER_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_IS_SMOKING_INDEX] = 1;
+		print_actual_state();
 		printf("----SMOKER WITH TOBACCO IS SMOKING !!! :) ----\n");
 		sleep(2);
+
+		sem_post(&production_Administrator);
+		//dispatch_semaphore_signal(production_Administrator);
 	}
 }
 
@@ -118,12 +167,24 @@ void* smoking_With_Match(void *arg){
 	while(1){
 		sem_wait(&transporter_Match);
 		//dispatch_semaphore_wait(transporter_Match, DISPATCH_TIME_FOREVER);
+
+		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 0;
+		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_TOBACCO_INDEX] = 1;
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_PAPER_INDEX] = 1;
+		print_actual_state();
 		printf("----SMOKER WITH MATCH IS MAKING THE CIGARETTE----\n");
 		sleep(2);
-		sem_post(&production_Administrator);
-		//dispatch_semaphore_signal(production_Administrator);
+
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_TOBACCO_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_PAPER_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_IS_SMOKING_INDEX] = 1;
+		print_actual_state();
 		printf("----SMOKER WITH MATCH IS SMOKING !!! :) ----\n");
 		sleep(2);
+
+		sem_post(&production_Administrator);
+		//dispatch_semaphore_signal(production_Administrator);
 	}
 }
 
@@ -131,12 +192,24 @@ void* smoking_With_Paper(void *arg){
 	while(1){
 		sem_wait(&transporter_Paper);
 		//dispatch_semaphore_wait(transporter_Paper, DISPATCH_TIME_FOREVER);
+
+		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 0;
+		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_TOBACCO_INDEX] = 1;
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_MATCH_INDEX] = 1;
+		print_actual_state();
 		printf("----SMOKER WITH PAPER IS MAKING THE CIGARETTE----\n");
 		sleep(2);
-		sem_post(&production_Administrator);
-		//dispatch_semaphore_signal(production_Administrator);
+
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_TOBACCO_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_MATCH_INDEX] = 0;
+		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 1;
+		print_actual_state();
 		printf("----SMOKER WITH PAPER IS SMOKING !!! :) ----\n");
 		sleep(2);
+
+		sem_post(&production_Administrator);
+		//dispatch_semaphore_signal(production_Administrator);
 	}
 }
 
@@ -211,6 +284,9 @@ void* transporting_Paper(void *arg){
 }
 
 int main(){
+	global_State_Matrix[M_SMOKER_MATCH_INDEX][M_MATCH_INDEX] = 1;
+	global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_TOBACCO_INDEX] = 1;
+	global_State_Matrix[M_SMOKER_PAPER_INDEX][M_PAPER_INDEX] = 1;
 
 	pthread_t productor_Tobacco_Match, productor_Tobacco_Paper, productor_Paper_Match;
 	pthread_t smoker_With_Tobacco, smoker_With_Match, smoker_With_Paper;
