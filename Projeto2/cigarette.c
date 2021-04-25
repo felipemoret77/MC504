@@ -6,6 +6,12 @@
 // TODO: MAKEFILE FIX
 //#include <dispatch/dispatch.h>
 
+// Constants to define state matrix size
+#define PERSON_QTD		3+1	// 3 smokers + Admnistrator
+#define RESOURCES_QTD 	3+1	// 3 Ingredients + IsSmoking
+
+int global_State_Matrix[PERSON_QTD][RESOURCES_QTD] = {0};
+
 //Semaphores for ingredient production administration
 sem_t production_Administrator;
 sem_t production_Tobacco;
@@ -33,6 +39,28 @@ int isTobacco = 0;
 int isPaper = 0;
 int isMatch = 0;
 
+void print_actual_state(){
+	system("clear");
+	printf("		|| M | T | P || S |\n");
+	printf("________________||___|___|___||___|\n");
+	for(int person=0; person<PERSON_QTD; person++){
+		if (person == 0)
+			printf("Agent 		||");
+		if (person == 1)
+			printf("Smoker Match	||");
+		if (person == 2)
+			printf("Smoker Tobacco	||");
+		if (person == 3)
+			printf("Smoker Paper	||");
+		for (int resource=0; resource<RESOURCES_QTD; resource++){
+			printf(" %d |", global_State_Matrix[person][resource]);
+			if (resource == 2)
+				printf("|");
+		}
+		printf("\n");
+	}
+}
+
 void* producting_Tobacco_Match(void *arg){
 	while(1){
 		sem_wait(&production_Administrator);
@@ -59,7 +87,6 @@ void* producting_Tobacco_Paper(void *arg){
 	}
 }
 
-
 void* producting_Paper_Match(void *arg){
 	while(1){
 		sem_wait(&production_Administrator);
@@ -72,6 +99,7 @@ void* producting_Paper_Match(void *arg){
 		//dispatch_semaphore_signal(production_Match);
 	}
 }
+
 
 void* smoking_With_Tobacco(void *arg){
 	while(1){
@@ -99,7 +127,6 @@ void* smoking_With_Match(void *arg){
 	}
 }
 
-
 void* smoking_With_Paper(void *arg){
 	while(1){
 		sem_wait(&transporter_Paper);
@@ -112,6 +139,7 @@ void* smoking_With_Paper(void *arg){
 		sleep(2);
 	}
 }
+
 
 void* transporting_Tobacco(void *arg){
 	while(1){
@@ -135,7 +163,6 @@ void* transporting_Tobacco(void *arg){
 		pthread_mutex_unlock(&mutex);
 	}
 }
-
 
 void* transporting_Match(void *arg){
 	while(1){
