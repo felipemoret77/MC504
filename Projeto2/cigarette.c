@@ -3,8 +3,10 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <unistd.h>
-// TODO: MAKEFILE FIX
-//#include <dispatch/dispatch.h>
+
+#ifndef LINUX_OS
+	#include <dispatch/dispatch.h>
+#endif
 
 // Constants to define state matrix size
 #define PERSON_QTD		3+1	// 3 smokers + Admnistrator
@@ -22,24 +24,26 @@
 
 int global_State_Matrix[PERSON_QTD][RESOURCES_QTD] = {0};
 
-//Semaphores for ingredient production administration
-sem_t production_Administrator;
-sem_t production_Tobacco;
-sem_t production_Paper;
-sem_t production_Match;
-//Semaphores for transporters
-sem_t transporter_Tobacco;
-sem_t transporter_Paper;
-sem_t transporter_Match;
 
-// TODO: MAKEFILE FIX
-//dispatch_semaphore_t production_Administrator;
-//dispatch_semaphore_t production_Tobacco;
-//dispatch_semaphore_t production_Paper;
-//dispatch_semaphore_t production_Match;
-//dispatch_semaphore_t transporter_Tobacco;
-//dispatch_semaphore_t transporter_Paper;
-//dispatch_semaphore_t transporter_Match;
+#ifdef LINUX_OS
+//Semaphores for ingredient production administration
+	sem_t production_Administrator;
+	sem_t production_Tobacco;
+	sem_t production_Paper;
+	sem_t production_Match;
+	//Semaphores for transporters
+	sem_t transporter_Tobacco;
+	sem_t transporter_Paper;
+	sem_t transporter_Match;
+#else
+	dispatch_semaphore_t production_Administrator;
+	dispatch_semaphore_t production_Tobacco;
+	dispatch_semaphore_t production_Paper;
+	dispatch_semaphore_t production_Match;
+	dispatch_semaphore_t transporter_Tobacco;
+	dispatch_semaphore_t transporter_Paper;
+	dispatch_semaphore_t transporter_Match;
+#endif
 
 //Mutex for controlling transporters access to availability variables
 pthread_mutex_t mutex;
@@ -73,8 +77,11 @@ void print_actual_state(){
 
 void* producting_Tobacco_Match(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&production_Administrator);
-		//dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+#endif
 		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 1;
 		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 1;
 		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 0;
@@ -86,17 +93,23 @@ void* producting_Tobacco_Match(void *arg){
 		print_actual_state();
 		printf("----PRODUCTION OF TOBACCO AND MATCH IS GOING ON----\n");
 		sleep(2);
+#ifdef LINUX_OS
 		sem_post(&production_Tobacco);
-		//dispatch_semaphore_signal(production_Tobacco);
 		sem_post(&production_Match);
-		//dispatch_semaphore_signal(production_Match);
+#else
+		dispatch_semaphore_signal(production_Tobacco);
+		dispatch_semaphore_signal(production_Match);
+#endif
 	}
 }
 
 void* producting_Tobacco_Paper(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&production_Administrator);
-		//dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+#endif
 		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 1;
 		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 0;
 		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 1;
@@ -108,17 +121,23 @@ void* producting_Tobacco_Paper(void *arg){
 		print_actual_state();
 		printf("----PRODUCTION OF TOBACCO AND PAPER IS GOING ON----\n");
 		sleep(2);
+#ifdef LINUX_OS
 		sem_post(&production_Tobacco);
-		//dispatch_semaphore_signal(production_Tobacco);
 		sem_post(&production_Paper);
-		//dispatch_semaphore_signal(production_Paper);
+#else
+		dispatch_semaphore_signal(production_Tobacco);
+		dispatch_semaphore_signal(production_Paper);
+#endif
 	}
 }
 
 void* producting_Paper_Match(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&production_Administrator);
-		//dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(production_Administrator, DISPATCH_TIME_FOREVER);
+#endif
 
 		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 0;
 		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 1;
@@ -131,18 +150,24 @@ void* producting_Paper_Match(void *arg){
 		print_actual_state();
 		printf("----PRODUCTION OF PAPER AND MATCH IS GOING ON----\n");
 		sleep(2);
+#ifdef LINUX_OS
 		sem_post(&production_Paper);
-		//dispatch_semaphore_signal(production_Paper);
 		sem_post(&production_Match);
-		//dispatch_semaphore_signal(production_Match);
+#else
+		dispatch_semaphore_signal(production_Paper);
+		dispatch_semaphore_signal(production_Match);
+#endif
 	}
 }
 
 
 void* smoking_With_Tobacco(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&transporter_Tobacco);
-		//dispatch_semaphore_wait(transporter_Tobacco, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(transporter_Tobacco, DISPATCH_TIME_FOREVER);
+#endif
 		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 0;
 		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_MATCH_INDEX] = 1;
@@ -158,15 +183,21 @@ void* smoking_With_Tobacco(void *arg){
 		printf("----SMOKER WITH TOBACCO IS SMOKING !!! :) ----\n");
 		sleep(2);
 
+#ifdef LINUX_OS
 		sem_post(&production_Administrator);
-		//dispatch_semaphore_signal(production_Administrator);
+#else
+		dispatch_semaphore_signal(production_Administrator);
+#endif
 	}
 }
 
 void* smoking_With_Match(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&transporter_Match);
-		//dispatch_semaphore_wait(transporter_Match, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(transporter_Match, DISPATCH_TIME_FOREVER);
+#endif
 
 		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 0;
 		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 0;
@@ -183,15 +214,21 @@ void* smoking_With_Match(void *arg){
 		printf("----SMOKER WITH MATCH IS SMOKING !!! :) ----\n");
 		sleep(2);
 
+#ifdef LINUX_OS
 		sem_post(&production_Administrator);
-		//dispatch_semaphore_signal(production_Administrator);
+#else
+		dispatch_semaphore_signal(production_Administrator);
+#endif
 	}
 }
 
 void* smoking_With_Paper(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&transporter_Paper);
-		//dispatch_semaphore_wait(transporter_Paper, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(transporter_Paper, DISPATCH_TIME_FOREVER);
+#endif
 
 		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 0;
 		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 0;
@@ -208,26 +245,38 @@ void* smoking_With_Paper(void *arg){
 		printf("----SMOKER WITH PAPER IS SMOKING !!! :) ----\n");
 		sleep(2);
 
+#ifdef LINUX_OS
 		sem_post(&production_Administrator);
-		//dispatch_semaphore_signal(production_Administrator);
+#else
+		dispatch_semaphore_signal(production_Administrator);
+#endif
 	}
 }
 
 
 void* transporting_Tobacco(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&production_Tobacco);
-		//dispatch_semaphore_wait(production_Tobacco, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(production_Tobacco, DISPATCH_TIME_FOREVER);
+#endif
 		pthread_mutex_lock(&mutex);
 		if(isPaper){
 			isPaper = 0;
+#ifdef LINUX_OS
 			sem_post(&transporter_Match);
-			//dispatch_semaphore_signal(transporter_Match);
+#else
+			dispatch_semaphore_signal(transporter_Match);
+#endif
 		}
 		else if(isMatch){
 			isMatch = 0;
+#ifdef LINUX_OS
 			sem_post(&transporter_Paper);
-			//dispatch_semaphore_signal(transporter_Paper);
+#else
+			dispatch_semaphore_signal(transporter_Paper);
+#endif
 		}
 		else{
 			isTobacco = 1;
@@ -239,18 +288,27 @@ void* transporting_Tobacco(void *arg){
 
 void* transporting_Match(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&production_Match);
-		//dispatch_semaphore_wait(production_Match, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(production_Match, DISPATCH_TIME_FOREVER);
+#endif
 		pthread_mutex_lock(&mutex);
 		if(isPaper){
 			isPaper = 0;
+#ifdef LINUX_OS
 			sem_post(&transporter_Tobacco);
-			//dispatch_semaphore_signal(transporter_Tobacco);
+#else
+			dispatch_semaphore_signal(transporter_Tobacco);
+#endif
 		}
 		else if(isTobacco){
 			isTobacco = 0;
+#ifdef LINUX_OS
 			sem_post(&transporter_Paper);
-			//dispatch_semaphore_signal(transporter_Paper);
+#else
+			dispatch_semaphore_signal(transporter_Paper);
+#endif
 		}
 		else{
 			isMatch = 1;
@@ -262,18 +320,27 @@ void* transporting_Match(void *arg){
 
 void* transporting_Paper(void *arg){
 	while(1){
+#ifdef LINUX_OS
 		sem_wait(&production_Paper);
-		//dispatch_semaphore_wait(production_Paper, DISPATCH_TIME_FOREVER);
+#else
+		dispatch_semaphore_wait(production_Paper, DISPATCH_TIME_FOREVER);
+#endif
 		pthread_mutex_lock(&mutex);
 		if(isTobacco){
 			isTobacco = 0;
+#ifdef LINUX_OS
 			sem_post(&transporter_Match);
-			//dispatch_semaphore_signal(transporter_Match);
+#else
+			dispatch_semaphore_signal(transporter_Match);
+#endif
 		}
 		else if(isMatch){
 			isMatch = 0;
+#ifdef LINUX_OS
 			sem_post(&transporter_Tobacco);
-			//dispatch_semaphore_signal(transporter_Tobacco);
+#else
+			dispatch_semaphore_signal(transporter_Tobacco);
+#endif
 		}
 		else{
 			isPaper = 1;
@@ -292,7 +359,7 @@ int main(){
 	pthread_t smoker_With_Tobacco, smoker_With_Match, smoker_With_Paper;
 	pthread_t transporter_Tobacco_t, transporter_Match_t, transporter_Paper_t;
 
-	//LINUX
+#ifdef LINUX_OS
 	sem_init(&production_Administrator, 0, 1);
 	sem_init(&production_Tobacco, 0, 0);
 	sem_init(&production_Match, 0, 0);
@@ -301,16 +368,16 @@ int main(){
 	sem_init(&transporter_Tobacco, 0, 0);
 	sem_init(&transporter_Match, 0, 0);
 	sem_init(&transporter_Paper, 0, 0);
+#else
+	production_Administrator = dispatch_semaphore_create(1);
+	production_Tobacco = dispatch_semaphore_create(0);
+	production_Match = dispatch_semaphore_create(0);
+	production_Paper = dispatch_semaphore_create(0);
 
-	//MAC
-	//production_Administrator = dispatch_semaphore_create(1);
-	//production_Tobacco = dispatch_semaphore_create(0);
-	//production_Match = dispatch_semaphore_create(0);
-	//production_Paper = dispatch_semaphore_create(0);
-
-	//transporter_Tobacco = dispatch_semaphore_create(0);
-	//transporter_Match = dispatch_semaphore_create(0);
-	//transporter_Paper = dispatch_semaphore_create(0);
+	transporter_Tobacco = dispatch_semaphore_create(0);
+	transporter_Match = dispatch_semaphore_create(0);
+	transporter_Paper = dispatch_semaphore_create(0);
+#endif
 
 	pthread_mutex_init(&mutex, NULL);
 
@@ -371,7 +438,7 @@ int main(){
 
 	pthread_mutex_destroy(&mutex);
 
-	//LINUX
+#ifdef LINUX_OS
 	sem_destroy(&production_Administrator);
 	sem_destroy(&production_Tobacco);
 	sem_destroy(&production_Paper);
@@ -380,16 +447,15 @@ int main(){
 	sem_destroy(&transporter_Tobacco);
 	sem_destroy(&transporter_Match);
 	sem_destroy(&transporter_Paper);
+#else
+	dispatch_release(production_Administrator);
+	dispatch_release(production_Tobacco);
+	dispatch_release(production_Paper);
+	dispatch_release(production_Match);
 
-	//MAC
-	//dispatch_release(production_Administrator);
-	//dispatch_release(production_Tobacco);
-	//dispatch_release(production_Paper);
-	//dispatch_release(production_Match);
-
-	//dispatch_release(transporter_Tobacco);
-	//dispatch_release(transporter_Match);
-	//dispatch_release(transporter_Paper);
-
+	dispatch_release(transporter_Tobacco);
+	dispatch_release(transporter_Match);
+	dispatch_release(transporter_Paper);
+#endif
 	return 0;
 }
