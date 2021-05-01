@@ -22,16 +22,62 @@
 #define M_SMOKER_TOBACCO_INDEX	2
 #define M_SMOKER_PAPER_INDEX	3
 
+
+//Matriz para representar o estado global dos recursos (producao e consumo)
 int global_State_Matrix[PERSON_QTD][RESOURCES_QTD] = {0};
 
 
+//Matriz global para representar um personagem fumando
+char global_smoker_picture_smoking[4][4] = {{' ','o','-', '~'},
+									 {'/', '|', '\\', ' '},
+									 {' ', '|', ' ', ' '},
+									 {'/',' ','\\', ' '}};
+
+//Matriz global para representar um personagem contente por ter os ingredientes para produzir o cigarro
+char global_smoker_picture_happy[4][3] = {{'\\','o','/'},
+									 {' ', '|',' '},
+									 {' ', '|',' '},
+									 {'/',' ','\\'}};
+
+//Matriz global para representar producao de Tabaco e Fósforo
+char global_production_tobacco_match[5][26] = { 
+
+ 	{' ',' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_'}, 
+    {' ','/','-','|',' ','|',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','|'},
+    {'/','_','_','|',' ','|',' ',' ',' ','T','O','B','A','C','C','O',' ','&',' ','M','A','T','C','H',' ','|'},     
+    {'|',' ',' ','|',' ','|','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','|'},
+    {'"','-','O','-','-','-','-','O','-','O','`',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','`','O','`','O',' '}
+   };
+
+//Matriz global para representar producao de tabaco e papel
+char global_production_tobacco_paper[5][26] = { 
+
+ 	{' ',' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_'}, 
+    {' ','/','-','|',' ','|',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','|'},
+    {'/','_','_','|',' ','|',' ',' ',' ','T','O','B','A','C','C','O',' ','&',' ','P','A','P','E','R',' ','|'},     
+    {'|',' ',' ','|',' ','|','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','|'},
+    {'"','-','O','-','-','-','-','O','-','O','`',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','`','O','`','O',' '}
+   };
+
+//Matriz global para representar producao de papel e fósforo
+char global_production_paper_match[5][26] = { 
+
+ 	{' ',' ','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_'}, 
+    {' ','/','-','|',' ','|',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','|'},
+    {'/','_','_','|',' ','|',' ',' ',' ','P','A','P','E','R',' ','&',' ','M','A','T','C','H',' ',' ',' ','|'},     
+    {'|',' ',' ','|',' ','|','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','_','|'},
+    {'"','-','O','-','-','-','-','O','-','O','`',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ','`','O','`','O',' '}
+   };
+
+
+//Construindo os semáforos de acordo com o sistema operacional
 #ifdef LINUX_OS
-//Semaphores for ingredient production administration
+//Semáforos para produção dos ingredientes
 	sem_t production_Administrator;
 	sem_t production_Tobacco;
 	sem_t production_Paper;
 	sem_t production_Match;
-	//Semaphores for transporters
+	//Semaforo para controlar o transporte dos ingredientes
 	sem_t transporter_Tobacco;
 	sem_t transporter_Paper;
 	sem_t transporter_Match;
@@ -45,14 +91,15 @@ int global_State_Matrix[PERSON_QTD][RESOURCES_QTD] = {0};
 	dispatch_semaphore_t transporter_Match;
 #endif
 
-//Mutex for controlling transporters access to availability variables
+//Mutex para controlar o acesso aos recursos
 pthread_mutex_t mutex;
 
-//Variables for signaling the presence of ingredients (availability variables)
+//Variaveis que sinalizam existencia ou nao de um dado ingrediente
 int isTobacco = 0;
 int isPaper = 0;
 int isMatch = 0;
 
+//Funcao para printar o estado global atual do sistema
 void print_actual_state(){
 	system("clear");
 	printf("		|| M | T | P || S |\n");
@@ -75,6 +122,64 @@ void print_actual_state(){
 	}
 }
 
+//Funcao responsavel por printar um boneco fumando
+void print_smoker_picture_smoking(){
+	int i, j;
+
+	for(i = 0; i < 4; i++){
+		for(j = 0; j < 4; j++)
+			printf("%c", global_smoker_picture_smoking[i][j]);
+		printf("\n");
+	}
+}
+
+//Funcao responsavel por printar um boneco contente :)
+void print_smoker_picture_happy(){
+	int i, j;
+
+	for(i = 0; i < 4; i++){
+		for(j = 0; j < 3; j++)
+			printf("%c", global_smoker_picture_happy[i][j]);
+		printf("\n");
+	}
+}
+
+//Funcao responsavel por printar a producao de Tabaco e Fosforo
+void print_global_production_Tobacco_Match(){
+	int i, j;
+
+	for(i = 0; i < 5; i++){
+		for(j = 0; j < 26; j++)
+			printf("%c", global_production_tobacco_match[i][j]);
+		printf("\n");
+	}
+}
+
+//Funcao responsavel por printar a producao de Tabaco e Papel
+void print_global_production_Tobacco_Paper(){
+	int i, j;
+
+	for(i = 0; i < 5; i++){
+		for(j = 0; j < 26; j++)
+			printf("%c", global_production_tobacco_paper[i][j]);
+		printf("\n");
+	}
+}
+
+
+//Funcao responsavel por printar a producao de Papel e Fosforo
+void print_global_production_Paper_Match(){
+	int i, j;
+
+	for(i = 0; i < 5; i++){
+		for(j = 0; j < 26; j++)
+			printf("%c", global_production_paper_match[i][j]);
+		printf("\n");
+	}
+}
+
+
+//Funcao responsavel por produzir tabaco e fosforo
 void* producting_Tobacco_Match(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -91,8 +196,12 @@ void* producting_Tobacco_Match(void *arg){
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 0;
 
 		print_actual_state();
+		printf("\n");
 		printf("----PRODUCTION OF TOBACCO AND MATCH IS GOING ON----\n");
-		sleep(2);
+		printf("\n");
+		print_global_production_Tobacco_Match();
+		printf("\n");
+		sleep(4);
 #ifdef LINUX_OS
 		sem_post(&production_Tobacco);
 		sem_post(&production_Match);
@@ -103,6 +212,7 @@ void* producting_Tobacco_Match(void *arg){
 	}
 }
 
+//Funcao responsavel por produzir tabaco e papel
 void* producting_Tobacco_Paper(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -113,14 +223,16 @@ void* producting_Tobacco_Paper(void *arg){
 		global_State_Matrix[M_ADM_INDEX][M_TOBACCO_INDEX] = 1;
 		global_State_Matrix[M_ADM_INDEX][M_MATCH_INDEX] = 0;
 		global_State_Matrix[M_ADM_INDEX][M_PAPER_INDEX] = 1;
-
 		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_IS_SMOKING_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_IS_SMOKING_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 0;
-
 		print_actual_state();
+		printf("\n");
 		printf("----PRODUCTION OF TOBACCO AND PAPER IS GOING ON----\n");
-		sleep(2);
+		printf("\n");
+		print_global_production_Tobacco_Paper();
+		printf("\n");
+		sleep(4);
 #ifdef LINUX_OS
 		sem_post(&production_Tobacco);
 		sem_post(&production_Paper);
@@ -131,6 +243,7 @@ void* producting_Tobacco_Paper(void *arg){
 	}
 }
 
+//Funcao respobsavel por produzir papel e fosforo
 void* producting_Paper_Match(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -148,8 +261,11 @@ void* producting_Paper_Match(void *arg){
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 0;
 
 		print_actual_state();
+		printf("\n");
 		printf("----PRODUCTION OF PAPER AND MATCH IS GOING ON----\n");
-		sleep(2);
+		printf("\n");
+		print_global_production_Paper_Match();
+		sleep(4);
 #ifdef LINUX_OS
 		sem_post(&production_Paper);
 		sem_post(&production_Match);
@@ -161,6 +277,7 @@ void* producting_Paper_Match(void *arg){
 }
 
 
+//Funcao responsavel por fazer o fumante com tabaco fumar
 void* smoking_With_Tobacco(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -173,15 +290,22 @@ void* smoking_With_Tobacco(void *arg){
 		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_MATCH_INDEX] = 1;
 		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_PAPER_INDEX] = 1;
 		print_actual_state();
+		printf("\n");
 		printf("----SMOKER WITH TOBACCO IS MAKING THE CIGARETTE----\n");
-		sleep(2);
-
+		printf("\n");
+		print_smoker_picture_happy();
+		printf("Tobacco\n");
+		sleep(4);
 		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_MATCH_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_PAPER_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_IS_SMOKING_INDEX] = 1;
 		print_actual_state();
+		printf("\n");
 		printf("----SMOKER WITH TOBACCO IS SMOKING !!! :) ----\n");
-		sleep(2);
+		printf("\n");
+		print_smoker_picture_smoking();
+		printf("Tobacco\n");
+		sleep(4);
 
 #ifdef LINUX_OS
 		sem_post(&production_Administrator);
@@ -191,6 +315,7 @@ void* smoking_With_Tobacco(void *arg){
 	}
 }
 
+//Funcao responsavel por fazer o fumante com fosforo fumar
 void* smoking_With_Match(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -204,15 +329,23 @@ void* smoking_With_Match(void *arg){
 		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_TOBACCO_INDEX] = 1;
 		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_PAPER_INDEX] = 1;
 		print_actual_state();
+		printf("\n");
 		printf("----SMOKER WITH MATCH IS MAKING THE CIGARETTE----\n");
-		sleep(2);
-
+		printf("\n");
+		print_smoker_picture_happy();
+		printf("Match\n");
+		sleep(4);
 		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_TOBACCO_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_PAPER_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_MATCH_INDEX][M_IS_SMOKING_INDEX] = 1;
 		print_actual_state();
+		printf("\n");
 		printf("----SMOKER WITH MATCH IS SMOKING !!! :) ----\n");
-		sleep(2);
+		printf("\n");
+		print_smoker_picture_smoking();
+		printf("\n");
+		printf("Match\n");
+		sleep(4);
 
 #ifdef LINUX_OS
 		sem_post(&production_Administrator);
@@ -222,6 +355,7 @@ void* smoking_With_Match(void *arg){
 	}
 }
 
+//Funcao responsavel por fazer o fumante com papel fumar
 void* smoking_With_Paper(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -235,15 +369,21 @@ void* smoking_With_Paper(void *arg){
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_TOBACCO_INDEX] = 1;
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_MATCH_INDEX] = 1;
 		print_actual_state();
+		printf("\n");
 		printf("----SMOKER WITH PAPER IS MAKING THE CIGARETTE----\n");
-		sleep(2);
-
+		printf("\n");
+		print_smoker_picture_happy();
+		printf("Paper\n");
+		sleep(4);
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_TOBACCO_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_MATCH_INDEX] = 0;
 		global_State_Matrix[M_SMOKER_PAPER_INDEX][M_IS_SMOKING_INDEX] = 1;
 		print_actual_state();
 		printf("----SMOKER WITH PAPER IS SMOKING !!! :) ----\n");
-		sleep(2);
+		printf("\n");
+		print_smoker_picture_smoking();
+		printf("Paper\n");
+		sleep(4);
 
 #ifdef LINUX_OS
 		sem_post(&production_Administrator);
@@ -253,7 +393,7 @@ void* smoking_With_Paper(void *arg){
 	}
 }
 
-
+//Funcao responsavel por tranportar tabaco para os fumantes, assim como sinalizar o fumante com tabaco
 void* transporting_Tobacco(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -286,6 +426,7 @@ void* transporting_Tobacco(void *arg){
 	}
 }
 
+//Funcao responsavel por tranportar fosforo para os fumantes, assim como sinalizar o fumante com fosforo
 void* transporting_Match(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -318,6 +459,7 @@ void* transporting_Match(void *arg){
 	}
 }
 
+//Funcao responsavel por tranportar papel para os fumantes, assim como sinalizar o fumante com papel
 void* transporting_Paper(void *arg){
 	while(1){
 #ifdef LINUX_OS
@@ -351,14 +493,17 @@ void* transporting_Paper(void *arg){
 }
 
 int main(){
+	//Inicializando estado global do sistema
 	global_State_Matrix[M_SMOKER_MATCH_INDEX][M_MATCH_INDEX] = 1;
 	global_State_Matrix[M_SMOKER_TOBACCO_INDEX][M_TOBACCO_INDEX] = 1;
 	global_State_Matrix[M_SMOKER_PAPER_INDEX][M_PAPER_INDEX] = 1;
 
+	//Criando threads para os produtores, fumantes e transportadores
 	pthread_t productor_Tobacco_Match, productor_Tobacco_Paper, productor_Paper_Match;
 	pthread_t smoker_With_Tobacco, smoker_With_Match, smoker_With_Paper;
 	pthread_t transporter_Tobacco_t, transporter_Match_t, transporter_Paper_t;
 
+//Criando semaforos de producao e transporte
 #ifdef LINUX_OS
 	sem_init(&production_Administrator, 0, 1);
 	sem_init(&production_Tobacco, 0, 0);
@@ -379,8 +524,10 @@ int main(){
 	transporter_Paper = dispatch_semaphore_create(0);
 #endif
 
+	//Inicializando mutex de controle ao acesso de areas criticas
 	pthread_mutex_init(&mutex, NULL);
 
+	//Criando threads
 	if (pthread_create(&productor_Tobacco_Match, NULL, &producting_Tobacco_Match, NULL) != 0)
 		perror("Failed to create thread\n");
 
@@ -408,6 +555,7 @@ int main(){
 	if (pthread_create(&transporter_Paper_t, NULL, &transporting_Paper, NULL) != 0)
 		perror("Failed to create thread\n");
 
+	//Esperando threads
 	if (pthread_join(productor_Tobacco_Match, NULL) != 0)
 		perror("Failed to join thread\n");
 
@@ -436,8 +584,10 @@ int main(){
 		perror("Failed to join thread\n");
 
 
+	//Destruindo mutex
 	pthread_mutex_destroy(&mutex);
 
+//Destruindo threads
 #ifdef LINUX_OS
 	sem_destroy(&production_Administrator);
 	sem_destroy(&production_Tobacco);
